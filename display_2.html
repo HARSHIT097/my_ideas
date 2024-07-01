@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display and Update Files Without Backend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #fileUploadSection {
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Display and Update Files Without Backend</h1>
+    <h2>Enter Password</h2>
+    <input type="password" id="passwordInput">
+    <button id="loginButton">Login</button>
+    <div id="loginMessage"></div>
+    <div id="fileUploadSection">
+        <h2>Upload Text File</h2>
+        <input type="file" id="textFileInput" accept=".txt">
+        <h2>Upload CSV File</h2>
+        <input type="file" id="csvFileInput" accept=".csv">
+        <h2>Upload Excel File</h2>
+        <input type="file" id="excelFileInput" accept=".xlsx">
+        <h2>Upload Image File</h2>
+        <input type="file" id="imageFileInput" accept="image/*">
+    </div>
+    <h2>Text File Data</h2>
+    <div id="textFileContent"></div>
+    <h2>CSV File Data</h2>
+    <div id="csvFileContent"></div>
+    <h2>Excel File Data</h2>
+    <div id="excelFileContent"></div>
+    <h2>Image File Data</h2>
+    <div id="imageFileContent"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script>
+        const correctPassword = 'your-password'; // Replace with your desired password
+
+        document.getElementById('loginButton').addEventListener('click', function() {
+            const password = document.getElementById('passwordInput').value;
+            if (password === correctPassword) {
+                document.getElementById('fileUploadSection').style.display = 'block';
+                document.getElementById('loginMessage').textContent = 'Access granted';
+                document.getElementById('loginMessage').style.color = 'green';
+                document.getElementById('passwordInput').style.display = 'none';
+                document.getElementById('loginButton').style.display = 'none';
+                loadFileContent();
+            } else {
+                document.getElementById('loginMessage').textContent = 'Incorrect password';
+                document.getElementById('loginMessage').style.color = 'red';
+            }
+        });
+
+        document.getElementById('textFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    document.getElementById('textFileContent').textContent = content;
+                    localStorage.setItem('textFileContent', content);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById('csvFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    const rows = content.split('\n');
+                    let table = '<table>';
+                    rows.forEach(row => {
+                        const cells = row.split(',');
+                        table += '<tr>';
+                        cells.forEach(cell => {
+                            table += `<td>${cell}</td>`;
+                        });
+                        table += '</tr>';
+                    });
+                    table += '</table>';
+                    document.getElementById('csvFileContent').innerHTML = table;
+                    localStorage.setItem('csvFileContent', content);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById('excelFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const content = XLSX.utils.sheet_to_html(worksheet);
+                    document.getElementById('excelFileContent').innerHTML = content;
+                    localStorage.setItem('excelFileContent', content);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        document.getElementById('imageFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    document.getElementById('imageFileContent').innerHTML = `<img src="${content}" alt="Uploaded Image">`;
+                    localStorage.setItem('imageFileContent', content);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function loadFileContent() {
+            const textContent = localStorage.getItem('textFileContent');
+            if (textContent) {
+                document.getElementById('textFileContent').textContent = textContent;
+            }
+
+            const csvContent = localStorage.getItem('csvFileContent');
+            if (csvContent) {
+                const rows = csvContent.split('\n');
+                let table = '<table>';
+                rows.forEach(row => {
+                    const cells = row.split(',');
+                    table += '<tr>';
+                    cells.forEach(cell => {
+                        table += `<td>${cell}</td>`;
+                    });
+                    table += '</tr>';
+                });
+                table += '</table>';
+                document.getElementById('csvFileContent').innerHTML = table;
+            }
+
+            const excelContent = localStorage.getItem('excelFileContent');
+            if (excelContent) {
+                document.getElementById('excelFileContent').innerHTML = excelContent;
+            }
+
+            const imageContent = localStorage.getItem('imageFileContent');
+            if (imageContent) {
+                document.getElementById('imageFileContent').innerHTML = `<img src="${imageContent}" alt="Uploaded Image">`;
+            }
+        }
+
+        // Load file content on page load
+        window.onload = loadFileContent;
+    </script>
+</body>
+</html>
